@@ -131,9 +131,11 @@ struct local_i915_gem_context_param {
 #define LOCAL_CONTEXT_PARAM_NO_ERROR_CAPTURE	0x4
 #define LOCAL_CONTEXT_PARAM_BANNABLE	0x5
 #define LOCAL_CONTEXT_PARAM_WATCHDOG	0x6
+#define LOCAL_CONTEXT_PARAM_TRTT	0x7
 	uint64_t value;
 };
 void gem_context_require_bannable(int fd);
+int __gem_context_require_param(int fd, uint64_t param);
 void gem_context_require_param(int fd, uint64_t param);
 void gem_context_get_param(int fd, struct local_i915_gem_context_param *p);
 void gem_context_set_param(int fd, struct local_i915_gem_context_param *p);
@@ -168,6 +170,7 @@ int gem_gtt_type(int fd);
 int gem_gpu_reset_type(int fd);
 bool gem_uses_ppgtt(int fd);
 bool gem_uses_full_ppgtt(int fd);
+bool gem_uses_64b_ppgtt(int fd);
 int gem_available_fences(int fd);
 uint64_t gem_total_mappable_size(int fd);
 uint64_t gem_total_stolen_size(int fd);

@@ -157,6 +157,7 @@ TESTS_progs = \
 	gem_tiled_wb \
 	gem_tiled_wc \
 	gem_tiling_max_stride \
+	gem_trtt \
 	gem_unfence_active_buffers \
 	gem_unref_active_buffers \
 	gem_userptr_blits \

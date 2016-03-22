@@ -1013,6 +1013,22 @@ void gem_context_set_param(int fd, struct local_i915_gem_context_param *p)
 	igt_assert(__gem_context_set_param(fd, p) == 0);
 }
 
+int __gem_context_require_param(int fd, uint64_t param)
+{
+	struct local_i915_gem_context_param p;
+	int ret;
+
+	p.context = 0;
+	p.param = param;
+	p.value = 0;
+	p.size = 0;
+
+	ret = igt_ioctl(fd, LOCAL_IOCTL_I915_GEM_CONTEXT_GETPARAM, &p);
+	if (ret)
+		return -errno;
+	return 0;
+}
+
 /**
  * gem_context_require_param:
  * @fd: open i915 drm file descriptor
@@ -1023,14 +1039,7 @@ void gem_context_set_param(int fd, struct local_i915_gem_context_param *p)
  */
 void gem_context_require_param(int fd, uint64_t param)
 {
-	struct local_i915_gem_context_param p;
-
-	p.context = 0;
-	p.param = param;
-	p.value = 0;
-	p.size = 0;
-
-	igt_require(igt_ioctl(fd, LOCAL_IOCTL_I915_GEM_CONTEXT_GETPARAM, &p) == 0);
+	igt_require(__gem_context_require_param(fd, param) == 0);
 }
 
 void gem_context_require_bannable(int fd)
@@ -1218,6 +1227,20 @@ int gem_gpu_reset_type(int fd)
 	drmIoctl(fd, DRM_IOCTL_I915_GETPARAM, &gp);
 
 	return gpu_reset_type;
+}
+
+/**
+ * gem_uses_64b_ppgtt:
+ * @fd: open i915 drm file descriptor
+ *
+ * Feature test macro to check whether the kernel internally uses full
+ * 64b per-process gtt to execute batches.
+ *
+ * Returns: Whether batches are run through full 64b ppgtt.
+ */
+bool gem_uses_64b_ppgtt(int fd)
+{
+	return gem_gtt_type(fd) > 2;
 }
 
 /**
