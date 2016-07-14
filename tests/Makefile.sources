@@ -145,6 +145,7 @@ TESTS_progs = \
 	gem_storedw_loop \
 	gem_streaming_writes \
 	gem_sync \
+	gem_tdr \
 	gem_threaded_access_tiled \
 	gem_tiled_blits \
 	gem_tiled_fence_blits \
