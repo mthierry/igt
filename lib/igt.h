@@ -29,7 +29,6 @@
 #include "i915_pciids.h"
 #include "igt_aux.h"
 #include "igt_core.h"
-#include "igt_core.h"
 #include "igt_debugfs.h"
 #include "igt_draw.h"
 #include "igt_dummyload.h"
