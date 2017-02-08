@@ -45,8 +45,8 @@ igt_hang_t igt_hang_ctx(int fd,
 			int ring,
 			unsigned flags,
 			uint64_t *offset);
-#define HANG_ALLOW_BAN 1
-#define HANG_ALLOW_CAPTURE 2
+#define HANG_ALLOW_BAN		(1<<0)
+#define HANG_ALLOW_CAPTURE	(1<<1)
 
 igt_hang_t igt_hang_ring(int fd, int ring);
 void igt_post_hang_ring(int fd, igt_hang_t arg);
