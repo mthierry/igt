@@ -47,6 +47,7 @@ igt_hang_t igt_hang_ctx(int fd,
 			uint64_t *offset);
 #define HANG_ALLOW_BAN		(1<<0)
 #define HANG_ALLOW_CAPTURE	(1<<1)
+#define HANG_USE_WATCHDOG	(1<<2)
 
 igt_hang_t igt_hang_ring(int fd, int ring);
 void igt_post_hang_ring(int fd, igt_hang_t arg);
@@ -79,5 +80,16 @@ extern const struct intel_execution_engine {
 		for_if (gem_has_ring(fd__, flags__ = e__->exec_id | e__->flags))
 
 bool gem_can_store_dword(int fd, unsigned int engine);
+
+enum intel_engine_id {
+	RCS = 0,
+	BCS,
+	VCS,
+	VCS2,
+	VECS,
+	MAX_ENGINES,
+};
+
+unsigned user_ring_to_kernel_ring(unsigned ring_id);
 
 #endif /* IGT_GT_H */

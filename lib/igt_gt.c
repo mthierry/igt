@@ -51,6 +51,24 @@
  * engines.
  */
 
+unsigned user_ring_to_kernel_ring(unsigned ring_id)
+{
+	switch (ring_id) {
+	default:
+	case I915_EXEC_RENDER:
+		return RCS;
+	case I915_EXEC_BSD:
+	case I915_EXEC_BSD | 1<<13:
+		return VCS;
+	case I915_EXEC_BSD | 2<<13:
+		return VCS2;
+	case I915_EXEC_BLT:
+		return BCS;
+	case I915_EXEC_VEBOX:
+		return VECS;
+	}
+}
+
 static bool has_gpu_reset(int fd)
 {
 	static int once = -1;
@@ -157,6 +175,30 @@ static void context_set_ban(int fd, unsigned ctx, unsigned ban)
 	}
 }
 
+static void context_set_watchdog(int fd, int ring,
+				 unsigned ctx, unsigned threshold)
+{
+	struct local_i915_gem_context_param param;
+	unsigned engines_threshold[MAX_ENGINES];
+	int engine_id = user_ring_to_kernel_ring(ring);
+
+	memset(&param, 0, sizeof(param));
+	memset(&engines_threshold, 0, sizeof(engines_threshold));
+	param.context = ctx;
+	param.value = (uint64_t)&engines_threshold;
+	param.size = sizeof(engines_threshold);
+	param.param = LOCAL_CONTEXT_PARAM_WATCHDOG;
+
+	/* read existing values */
+	gem_context_get_param(fd, &param);
+	igt_assert_f(param.size <= sizeof(engines_threshold),
+		   "more engines defined in i915, time to update i-g-t\n");
+
+	memset(&engines_threshold, 0, sizeof(engines_threshold));
+	engines_threshold[engine_id] = threshold;
+	gem_context_set_param(fd, &param);
+}
+
 igt_hang_t igt_allow_hang(int fd, unsigned ctx, unsigned flags)
 {
 	struct local_i915_gem_context_param param;
@@ -249,6 +291,11 @@ igt_hang_t igt_hang_ctx(int fd,
 		 * the right one).
 		 */
 		__gem_context_set_param(fd, &param);
+	}
+
+	if (flags & HANG_USE_WATCHDOG) {
+		/* in microseconds */
+		context_set_watchdog(fd, ring, ctx, 70000);
 	}
 
 	ban = context_get_ban(fd, ctx);
