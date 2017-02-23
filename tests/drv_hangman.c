@@ -123,12 +123,20 @@ static bool uses_cmd_parser(void)
 
 static void check_error_state(const char *expected_ring_name,
 			      uint64_t expected_offset,
-			      const uint32_t *batch)
+			      const uint32_t *batch,
+			      bool watchdog)
 {
 	bool cmd_parser = uses_cmd_parser();
 	FILE *file = open_error();
 	char *line = NULL;
+	const char *watchdog_hang_reason = "reason: Watchdog timeout";
 	size_t line_size = 0;
+
+	if (watchdog) {
+		/* NOTE: expected engine name check happens later */
+		if (getline(&line, &line_size, file) > 0)
+			igt_assert(strstr(line, watchdog_hang_reason));
+	}
 
 	while (getline(&line, &line_size, file) > 0) {
 		char *dashes;
@@ -177,21 +185,35 @@ static void check_error_state(const char *expected_ring_name,
 }
 
 static void test_error_state_capture(unsigned ring_id,
-				     const char *ring_name)
+				     const char *ring_name,
+				     bool watchdog)
 {
 	uint32_t *batch;
 	igt_hang_t hang;
 	uint64_t offset;
+	unsigned flags = HANG_ALLOW_CAPTURE;
 
+	igt_skip_on_f(watchdog && ring_id == I915_EXEC_BLT,
+		      "no official watchdog support in BLT engine\n");
 	igt_require(gem_has_ring(device, ring_id));
 	clear_error_state();
+	assert_error_state_clear();
 
-	hang = igt_hang_ctx(device, 0, ring_id, HANG_ALLOW_CAPTURE, &offset);
+	if (watchdog) {
+		flags |= HANG_USE_WATCHDOG;
+		igt_assert(igt_sysfs_set_parameter
+			   (device, "reset", "%d", 2 /* engine reset */));
+		igt_skip_on_f(gem_gpu_reset_type(device) < 2,
+			      "platform without reset-engine, skipping\n");
+	}
+
+	hang = igt_hang_ctx(device, 0, ring_id, flags, &offset);
 	batch = gem_mmap__cpu(device, hang.handle, 0, 4096, PROT_READ);
 	gem_set_domain(device, hang.handle, I915_GEM_DOMAIN_CPU, 0);
 	igt_post_hang_ring(device, hang);
 
-	check_error_state(ring_name, offset, batch);
+	if (!watchdog) /* watchdog reset doesn't capture error state */
+		check_error_state(ring_name, offset, batch, watchdog);
 	munmap(batch, 4096);
 }
 
@@ -256,7 +278,11 @@ igt_main
 
 		igt_subtest_f("error-state-capture-%s", e->name)
 			test_error_state_capture(e->exec_id | e->flags,
-						 e->full_name);
+						 e->full_name, false);
+
+		igt_subtest_f("watchdog-%s", e->name)
+			test_error_state_capture(e->exec_id | e->flags,
+						 e->full_name, true);
 	}
 
 	igt_subtest("hangcheck-unterminated")
