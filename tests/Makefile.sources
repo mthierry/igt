@@ -87,6 +87,7 @@ TESTS_progs = \
 	gem_exec_schedule \
 	gem_exec_store \
 	gem_exec_suspend \
+	gem_exec_watchdog \
 	gem_exec_whisper \
 	gem_fd_exhaustion \
 	gem_fence_thrash \
