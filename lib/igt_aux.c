@@ -1654,3 +1654,20 @@ double igt_stop_siglatency(struct igt_mean *result)
 
 	return mean;
 }
+
+static inline uint64_t sign_extend(uint64_t x, int index)
+{
+	int shift = 63 - index;
+	return (int64_t)(x << shift) >> shift;
+}
+
+/*
+ * igt_canonical_address
+ * Used to convert any address into canonical form, i.e. [63:48] == [47].
+ * Based on kernel's sign_extend64 implementation.
+ * @address - a virtual address
+*/
+uint64_t igt_canonical_address(uint64_t address)
+{
+	return sign_extend(address, IGT_HIGH_ADDRESS_BIT);
+}

@@ -496,17 +496,6 @@ static void basic_reloc(int fd, unsigned before, unsigned after, unsigned flags)
 	gem_close(fd, obj.handle);
 }
 
-static inline uint64_t sign_extend(uint64_t x, int index)
-{
-	int shift = 63 - index;
-	return (int64_t)(x << shift) >> shift;
-}
-
-static uint64_t gen8_canonical_address(uint64_t address)
-{
-	return sign_extend(address, 47);
-}
-
 static void basic_range(int fd, unsigned flags)
 {
 	struct drm_i915_gem_relocation_entry reloc[128];
@@ -533,7 +522,7 @@ static void basic_range(int fd, unsigned flags)
 	for (int i = 0; i <= count; i++) {
 		obj[n].handle = gem_create(fd, 4096);
 		obj[n].offset = (1ull << (i + 12)) - 4096;
-		obj[n].offset = gen8_canonical_address(obj[n].offset);
+		obj[n].offset = igt_canonical_address(obj[n].offset);
 		obj[n].flags = EXEC_OBJECT_PINNED | EXEC_OBJECT_SUPPORTS_48B_ADDRESS;
 		gem_write(fd, obj[n].handle, 0, &bbe, sizeof(bbe));
 		execbuf.buffers_ptr = to_user_pointer(&obj[n]);
@@ -553,7 +542,7 @@ static void basic_range(int fd, unsigned flags)
 	for (int i = 1; i < count; i++) {
 		obj[n].handle = gem_create(fd, 4096);
 		obj[n].offset = 1ull << (i + 12);
-		obj[n].offset = gen8_canonical_address(obj[n].offset);
+		obj[n].offset = igt_canonical_address(obj[n].offset);
 		obj[n].flags = EXEC_OBJECT_PINNED | EXEC_OBJECT_SUPPORTS_48B_ADDRESS;
 		gem_write(fd, obj[n].handle, 0, &bbe, sizeof(bbe));
 		execbuf.buffers_ptr = to_user_pointer(&obj[n]);

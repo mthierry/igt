@@ -31,18 +31,6 @@
 #define EXEC_OBJECT_PINNED	(1<<4)
 #define EXEC_OBJECT_SUPPORTS_48B_ADDRESS (1<<3)
 
-/* gen8_canonical_addr
- * Used to convert any address into canonical form, i.e. [63:48] == [47].
- * Based on kernel's sign_extend64 implementation.
- * @address - a virtual address
-*/
-#define GEN8_HIGH_ADDRESS_BIT 47
-static uint64_t gen8_canonical_addr(uint64_t address)
-{
-	__u8 shift = 63 - GEN8_HIGH_ADDRESS_BIT;
-	return (__s64)(address << shift) >> shift;
-}
-
 static void test_invalid(int fd)
 {
 	const uint32_t bbe = MI_BATCH_BUFFER_END;
@@ -70,15 +58,15 @@ static void test_invalid(int fd)
 
 	/* Check beyond bounds of aperture */
 	object.offset = gem_aperture_size(fd) - 4096;
-	object.offset = gen8_canonical_addr(object.offset);
+	object.offset = igt_canonical_address(object.offset);
 	igt_assert_eq(__gem_execbuf(fd, &execbuf), -EINVAL);
 
 	/* Check gen8 canonical addressing */
-	if (gem_aperture_size(fd) > 1ull<<GEN8_HIGH_ADDRESS_BIT) {
-		object.offset = 1ull << GEN8_HIGH_ADDRESS_BIT;
+	if (gem_aperture_size(fd) > 1ull<<IGT_HIGH_ADDRESS_BIT) {
+		object.offset = 1ull << IGT_HIGH_ADDRESS_BIT;
 		igt_assert_eq(__gem_execbuf(fd, &execbuf), -EINVAL);
 
-		object.offset = gen8_canonical_addr(object.offset);
+		object.offset = igt_canonical_address(object.offset);
 		igt_assert_eq(__gem_execbuf(fd, &execbuf), 0);
 	}
 
@@ -88,7 +76,7 @@ static void test_invalid(int fd)
 		object.offset = 1ull<<32;
 		igt_assert_eq(__gem_execbuf(fd, &execbuf), -EINVAL);
 
-		object.offset = gen8_canonical_addr(object.offset);
+		object.offset = igt_canonical_address(object.offset);
 		object.flags |= EXEC_OBJECT_SUPPORTS_48B_ADDRESS;
 		igt_assert_eq(__gem_execbuf(fd, &execbuf), 0);
 	}

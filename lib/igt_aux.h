@@ -287,6 +287,9 @@ void igt_set_module_param_int(const char *name, int val);
 int igt_terminate_process(int sig, const char *comm);
 void igt_lsof(const char *dpath);
 
+#define IGT_HIGH_ADDRESS_BIT 47
+uint64_t igt_canonical_address(uint64_t address);
+
 /*
  * This list data structure is a verbatim copy from wayland-util.h from the
  * Wayland project; except that wl_ prefix has been removed.
