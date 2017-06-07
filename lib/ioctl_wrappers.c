@@ -1199,6 +1199,28 @@ bool gem_uses_full_ppgtt(int fd)
 }
 
 /**
+ * gem_gpu_reset_type:
+ * @fd: open i915 drm file descriptor
+ *
+ * Query whether reset-engine (2), global-reset (1) or reset-disable (0)
+ * is available.
+ *
+ * Returns: GPU reset type available
+ */
+int gem_gpu_reset_type(int fd)
+{
+	struct drm_i915_getparam gp;
+	int gpu_reset_type = -1;
+
+	memset(&gp, 0, sizeof(gp));
+	gp.param = I915_PARAM_HAS_GPU_RESET;
+	gp.value = &gpu_reset_type;
+	drmIoctl(fd, DRM_IOCTL_I915_GETPARAM, &gp);
+
+	return gpu_reset_type;
+}
+
+/**
  * gem_available_fences:
  * @fd: open i915 drm file descriptor
  *
