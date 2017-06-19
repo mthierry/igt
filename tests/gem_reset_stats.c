@@ -56,7 +56,10 @@ struct local_drm_i915_reset_stats {
 	__u32 reset_count;
 	__u32 batch_active;
 	__u32 batch_pending;
-	__u32 pad;
+	union {
+		__u32 pad;
+		__u32 reset_engine_count;
+	};
 };
 
 #define MAX_FD 32
@@ -473,7 +476,7 @@ static int get_reset_count(int fd, int ctx)
 	if (ret)
 		return ret;
 
-	return rs.reset_count;
+	return rs.reset_count + rs.reset_engine_count;
 }
 
 static void test_close_pending_ctx(const struct intel_execution_engine *e)
@@ -595,6 +598,7 @@ static void test_reset_count(const struct intel_execution_engine *e,
 	inject_hang(fd, ctx, e, 0);
 
 	assert_reset_status(fd, fd, ctx, RS_BATCH_ACTIVE);
+	sleep(1);
 	c2 = get_reset_count(fd, ctx);
 	igt_assert(c2 >= 0);
 	igt_assert(c2 == (c1 + 1));
